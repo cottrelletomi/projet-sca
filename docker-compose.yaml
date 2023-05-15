@@ -1,0 +1,61 @@
+version: "3.9"
+
+services:
+  app:
+    image: episen-sca/dev
+    container_name: episen-sca_app
+    build:
+      context: ../app
+      args:
+        REDIS_URL: redis://cache:6379
+    depends_on:
+      - cache
+    ports:
+      - "1337:1337"
+    restart: on-failure
+    profiles:
+      - default
+
+  cache:
+    image: episen-sca/cache
+    container_name: episen-sca_cache
+    build: ../cache
+    ports:
+      - '6379:6379'
+    volumes:
+      - "../cache/data:/data"
+    profiles:
+      - default
+      - dev
+
+  dev:
+    image: episen-sca/dev
+    container_name: episen-sca_dev
+    build:
+      context: ../app
+      target: dev
+      args:
+        REDIS_URL: redis://cache:6379
+    depends_on:
+      - cache
+    ports:
+      - "1337:1337"
+      - "9229:9229"
+    volumes:
+      - "../app/lib:/app/lib"
+    restart: on-failure
+    profiles:
+      - dev
+
+  test:
+    image: episen-sca/test
+    container_name: episen-sca_test
+    build:
+      context: ../app
+      target: test
+    profiles:
+      - test
+
+networks:
+  default:
+    name: episen-sca_network
